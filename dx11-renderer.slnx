@@ -1,12 +1,21 @@
 <Solution>
+  <Folder Name="/include/" />
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path="CLAUDE.md" />
     <File Path="README.md" />
   </Folder>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
   <Folder Name="/docs/">
     <File Path="docs/devlog.md" />
     <File Path="docs/goals.md" />
     <File Path="docs/learning.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Client/Client.vcxproj" Id="aa08070a-ed9c-4ba7-87f0-d74106dcc696" />
+    <Project Path="src/Renderer/renderer.vcxproj" Id="50a2b677-77aa-4bde-b280-bfc42abd3afd" />
   </Folder>
 </Solution>
