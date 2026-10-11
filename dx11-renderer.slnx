@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="CLAUDE.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/devlog.md" />
+    <File Path="docs/goals.md" />
+    <File Path="docs/learning.md" />
+  </Folder>
+</Solution>

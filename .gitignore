@@ -1,0 +1,23 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+ipch/
+x64/
+Debug/
+Release/
+bin/
+obj/
+
+# CMake
+build/
+out/
+CMakeCache.txt
+CMakeFiles/
+
+# Compiled shaders
+*.cso
