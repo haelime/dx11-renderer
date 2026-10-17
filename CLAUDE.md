@@ -22,12 +22,13 @@ C++/Direct3D 11 렌더러를 직접 만들며 공부하는 6개월 프로젝트 
 
 처음부터 다 만들지 않고 필요할 때 추가한다.
 
-1. `Bench` (콘솔): 0단계 벤치마크 (sizeof/alignof, 배열 vs 연결 리스트, AoS vs SoA, memcpy 대역폭)
-2. `Client` (실행 파일): Win32 창, 게임 루프 → 1단계 렌더링
-3. `Renderer` (정적 lib): 1단계 중반에 Client에서 D3D 코드를 떼어 냄
-4. `Common` (정적 lib) + `Server` (콘솔): 네트워크 단계
+1. `Client` (실행 파일, `src/Client/`): Win32 창, 게임 루프. 하위 시스템 "창", 진입점 `wWinMain`
+2. `Renderer` (정적 lib, `src/Renderer/`): D3D 코드. 처음부터 분리함 (2026-10-11). Client가 프로젝트 참조로 링크
+3. `Common` (정적 lib) + `Server` (콘솔): 네트워크 단계
+4. (나중에) `Bench` (콘솔): 벤치마크. learning.md "나중에" 참고
 
-폴더: `src/`, `shaders/`, `assets/`, `docs/`. 나누면 `src/<프로젝트명>/`.
+폴더: `src/<프로젝트명>/`, `shaders/`, `assets/`, `docs/`. 참고용 샘플은 저장소 밖 `C:\Users\lorem\projects\dx11-sdk-samples-reworked` (walbourn/directx-sdk-samples-reworked, 옛 이름 directx-sdk-samples. D3DX 없는 버전. 정답지로만 본다). `microsoft/DirectX-SDK-Samples`는 D3DX를 NuGet으로 쓰므로 보지 않는다.
+프로젝트 폴더를 옮길 땐 VS를 닫고 옮긴 뒤 slnx 경로를 고친다 (열린 채로 옮기면 VS가 옛 경로에 다시 저장함).
 
 ## 프로젝트 공통 설정
 
@@ -46,12 +47,13 @@ C++/Direct3D 11 렌더러를 직접 만들며 공부하는 6개월 프로젝트 
 - [x] 솔루션 생성, 문서 정리, git init, GitHub 연결
 - [x] 첫 커밋 & 푸시
 - [x] 남은 `C:\Users\lorem\projects\render-practice` 폴더 삭제 (이미 없었음, 2026-10-11 확인)
-- [ ] README "빌드" 섹션, devlog 오늘 기록 (사용자 직접)
-- [ ] 10-12부터 0단계: `Bench` 프로젝트 추가 → sizeof/alignof 실험부터
+- [x] 0단계(벤치마크) 건너뛰기로 결정, 1단계를 10-12부터 시작 (2026-10-12)
+- [x] Client(exe) + Renderer(정적 lib) 생성, `src/`로 이동, `/utf-8`, 하위 시스템 "창" + `wWinMain` → 창 만들기 ⓪ 진입점 확인(MessageBox) 완료, 커밋·푸시
+- [ ] 창 1~5단계: ① WndProc + `WNDCLASSEXW` + `RegisterClassExW` (디버거로 반환값 확인, `cbSize` 빼고 `GetLastError`) → ② `CreateWindowExW` + `ShowWindow` → ③ `GetMessage` 루프 → ④ `WM_DESTROY` → `PostQuitMessage` → ⑤ `PeekMessage` 게임 루프
+- [ ] 튜토리얼 01 D3D 부분을 Renderer에: 디바이스·스왑 체인·RTV·뷰포트·Clear·Present, 디버그 레이어 → 파란 화면
+- [ ] 설정 정리: Win32(x86) 구성 삭제, 출력 경로 `bin\`/`obj\`로
+- [ ] README "빌드" 섹션, devlog 기록 (사용자 직접)
 
-0단계 진행 방식: 이론을 먼저 읽지 말고 벤치마크를 먼저 돌려 "왜 이렇게 나왔지?"를 만든 뒤 설명하려고 공부한다.
-1주차 벤치마크, 2주차 이론(가상 메모리, PCI-e, GPU 구조) + 글, 3주차 Win32 창.
+진행 방식: 단계를 작게 나눠 단계마다 실행, 실행 전에 결과를 예측한다. 처음엔 문서·샘플을 보고 쳐도 되지만 한 줄씩 뜻을 말할 수 있을 때만 넘어가고, 다음 날 안 보고 다시 친다. 이해한 줄을 일부러 빼 보며 확인한다.
 
-벤치마크 함정: Release로 잴 것 / 결과를 안 쓰면 최적화로 루프가 사라짐 / 반복 측정 / 연결 리스트 노드 순서를 섞을 것.
-
-참고 자료: CS:APP 6·9장, Drepper "What Every Programmer Should Know About Memory", Microsoft Learn "Win32 및 C++ 시작", Fabian Giesen "A trip through the Graphics Pipeline 2011".
+참고 자료: Microsoft Learn "Win32 및 C++ 시작" 모듈 1, 함수별 Learn 문서(구문/매개 변수/반환 값/설명/요구 사항), `Tutorial01.cpp`(막힐 때만).
