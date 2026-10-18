@@ -1,5 +1,9 @@
 <Solution>
   <Folder Name="/include/" />
+  <Folder Name="/shaders/">
+    <File Path="shaders/triangle_VS.hlsl" />
+    <File Path="shaders/triangle_PS.hlsl" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path="CLAUDE.md" />

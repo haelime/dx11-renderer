@@ -1,7 +1,11 @@
 #include <windows.h>
 #include <d3d11_1.h>
+#include <d3dcompiler.h>
 #include <directxcolors.h>
+#include <directxmath.h>
 #include "resource.h"
+
+
 
 HINSTANCE               g_hInst = nullptr;
 HWND                    g_hWnd = nullptr;
@@ -15,8 +19,16 @@ IDXGISwapChain*			g_pSwapChain = nullptr;
 IDXGISwapChain1*		g_pSwapChain1 = nullptr;
 ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
 
-using namespace DirectX;
+ID3D11VertexShader* g_pVertexShader = nullptr;
+ID3D11PixelShader* g_pPixelShader = nullptr;
+ID3D11InputLayout* g_pVertexLayout = nullptr;
+ID3D11Buffer* g_pVertexBuffer = nullptr;
 
+using namespace DirectX;
+struct SimpleVertex
+{
+    XMFLOAT3 Pos;
+};
 
 
 // -------------------------
@@ -27,7 +39,7 @@ HRESULT InitDevice();
 void CleanupDevice();
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void Render();
-
+HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
 
 HRESULT InitWindow(HINSTANCE hInsatnce, int nCmdShow)
 {
@@ -61,19 +73,6 @@ HRESULT InitWindow(HINSTANCE hInsatnce, int nCmdShow)
 	return S_OK;
 }
 
-
-int DisplayResourceNAMessagebox()
-{
-	int msgID = MessageBox(
-		NULL,
-		(LPCWSTR)L"잘가",
-		(LPCWSTR)L"안녕하세요",
-		MB_ICONWARNING | MB_CANCELTRYCONTINUE | MB_DEFBUTTON2
-	);
-
-	return msgID;
-}
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
@@ -89,6 +88,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	}
 
 	MSG msg = { 0 };
+
+
+
 	while (WM_QUIT != msg.message)
 	{
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -103,8 +105,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	}
 
 	CleanupDevice();
-
-	DisplayResourceNAMessagebox();
 	
 	return (int)msg.wParam;
 }
@@ -291,6 +291,85 @@ HRESULT InitDevice()
     vp.TopLeftY = 0;
     g_pImmediateContext->RSSetViewports(1, &vp);
 
+
+    hr = S_OK;
+
+    const WCHAR* szVertexShaderFileName = L"shaders/triangle_VS.hlsl";
+    const WCHAR* szPixelShaderFileName = L"shaders/triangle_PS.hlsl";
+    ID3DBlob* pVSBlob = nullptr;
+    ID3DBlob* pPSBlob = nullptr;
+    MessageBoxW(nullptr, L"ㅋㅋ", L"안녕", 0);
+
+    hr = CompileShaderFromFile(szVertexShaderFileName, "passPosition", "vs_5_0", &pVSBlob);
+    if (FAILED(hr)) {
+        OutputDebugStringW(L"omg u fucked up");
+        return hr;
+    }
+    hr = g_pd3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &g_pVertexShader);
+    if (FAILED(hr)) {
+        OutputDebugStringW(L"omg u fucked up");
+        return hr;
+    }
+
+    // Define the input layout
+    D3D11_INPUT_ELEMENT_DESC layout[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    UINT numElements = ARRAYSIZE(layout);
+
+    hr = g_pd3dDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &g_pVertexLayout);
+    if (FAILED(hr)) {
+        OutputDebugStringW(L"omg u fucked up");
+        return hr;
+    }
+    g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
+
+
+    hr = CompileShaderFromFile(szPixelShaderFileName, "setColorToGreen", "ps_5_0", &pPSBlob);
+    if (FAILED(hr)) {
+        OutputDebugStringW(L"omg u fucked up");
+        return hr;
+    }
+    hr = g_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pPixelShader);
+    if (FAILED(hr)) {
+        OutputDebugStringW(L"omg u fucked up");
+        return hr;
+    }
+
+
+    pVSBlob->Release();
+    pPSBlob->Release();
+
+    // Create vertex buffer
+    SimpleVertex vertices[] =
+    {
+        XMFLOAT3(0.0f, 0.5f, 0.5f),
+        XMFLOAT3(0.5f, -0.5f, 0.5f),
+        XMFLOAT3(-0.5f, -0.5f, 0.5f),
+    };
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(SimpleVertex) * 3;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA InitData = {};
+    InitData.pSysMem = vertices;
+    hr = g_pd3dDevice->CreateBuffer(&bd, &InitData, &g_pVertexBuffer);
+    if (FAILED(hr))
+        return hr;
+
+    // Set vertex buffer
+    UINT stride = sizeof(SimpleVertex);
+    UINT offset = 0;
+    g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
+
+    // Set primitive topology
+    g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+    OutputDebugStringW(L"InitDevice OK\n");
     return S_OK;
 }
 
@@ -302,6 +381,12 @@ void Render()
 {
     // Just clear the backbuffer
     g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, Colors::MidnightBlue);
+
+    g_pImmediateContext->VSSetShader(g_pVertexShader, nullptr, 0);
+    g_pImmediateContext->PSSetShader(g_pPixelShader, nullptr, 0);
+    g_pImmediateContext->Draw(3, 0);
+
+
     g_pSwapChain->Present(0, 0);
 }
 
@@ -320,4 +405,40 @@ void CleanupDevice()
     if (g_pImmediateContext) g_pImmediateContext->Release();
     if (g_pd3dDevice1) g_pd3dDevice1->Release();
     if (g_pd3dDevice) g_pd3dDevice->Release();
+    if (g_pVertexShader) g_pVertexShader->Release();
+    if (g_pPixelShader) g_pPixelShader->Release();
+    if (g_pVertexLayout) g_pVertexLayout->Release();
+}
+
+HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
+{
+    HRESULT hr = S_OK;
+
+    DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+    // Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
+    // Setting this flag improves the shader debugging experience, but still allows 
+    // the shaders to be optimized and to run exactly the way they will run in 
+    // the release configuration of this program.
+    dwShaderFlags |= D3DCOMPILE_DEBUG;
+
+    // Disable optimizations to further improve shader debugging
+    dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+    ID3DBlob* pErrorBlob = nullptr;
+    hr = D3DCompileFromFile(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
+        dwShaderFlags, 0, ppBlobOut, &pErrorBlob);
+    if (FAILED(hr))
+    {
+        if (pErrorBlob)
+        {
+            OutputDebugStringA(reinterpret_cast<const char*>(pErrorBlob->GetBufferPointer()));
+            pErrorBlob->Release();
+        }
+        return hr;
+    }
+    if (pErrorBlob) pErrorBlob->Release();
+
+    return S_OK;
 }
