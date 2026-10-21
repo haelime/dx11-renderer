@@ -1,0 +1,6 @@
+root = true
+
+# Sources are compiled with /utf-8, so editors must save them as UTF-8.
+# No BOM: fxc/D3DCompile can reject a BOM in shader files.
+[*.{cpp,h,hpp,inl,hlsl,hlsli}]
+charset = utf-8

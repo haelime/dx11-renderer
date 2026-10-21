@@ -1,11 +1,13 @@
 // triangle.hlsl
 // what the fuck should i do
-
-
-
-float4 setColorToGreen(float4 pos : SV_POSITION) : SV_Target
+struct VS_OUTPUT
 {
-    float4 col = { 0, 1, 0, 1.0f };
-    
-    return col;
+    float4 Pos : SV_POSITION;
+    float4 Col : COLOR0;
+};
+
+
+float4 PS(VS_OUTPUT input) : SV_Target
+{
+    return input.Col;
 }

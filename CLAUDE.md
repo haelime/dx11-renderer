@@ -38,7 +38,10 @@ C++/Direct3D 11 렌더러를 직접 만들며 공부하는 6개월 프로젝트 
 - 출력: `$(SolutionDir)bin\$(Platform)\$(Configuration)\`
 - 중간: `$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\`
 - 디버깅 작업 디렉터리: `$(SolutionDir)` (shaders/assets 상대 경로용)
-- 링크: `d3d11.lib`, `dxgi.lib`, `d3dcompiler.lib` (삼각형 단계부터)
+- 링크: `d3d11.lib`, `d3dcompiler.lib`는 `Renderer.cpp`의 `#pragma comment`로 Renderer가 직접 챙긴다 (Client 링커 설정에는 없음)
+- 그 밖: `/W4`, `/MP`, `WIN32_LEAN_AND_MEAN`, `NOMINMAX`, 포함 디렉터리 `$(SolutionDir)src\` (두 프로젝트 공통). 작업 디렉터리는 `.vcxproj`에 있음 (`.user` 아님)
+- 인코딩: 소스는 UTF-8 (`/utf-8`, 루트 `.editorconfig`). 셰이더는 BOM 없이 (fxc가 BOM을 거부할 수 있음)
+- D3D 객체는 `Microsoft::WRL::ComPtr`로 들고, `Release()`를 직접 부르지 않는다. 멤버는 선언 역순으로 해제되므로 디바이스를 맨 위에 선언
 - `.hlsl`을 프로젝트에 넣으면 VS가 FXC로 빌드하려 한다. 파일별로 셰이더 형식/모델(5.0)을 지정하거나, 런타임 컴파일이면 "빌드에서 제외".
 - 디버그 레이어 쓰려면 Windows 선택적 기능 "그래픽 도구" 필요.
 
@@ -49,9 +52,13 @@ C++/Direct3D 11 렌더러를 직접 만들며 공부하는 6개월 프로젝트 
 - [x] 남은 `C:\Users\lorem\projects\render-practice` 폴더 삭제 (이미 없었음, 2026-10-11 확인)
 - [x] 0단계(벤치마크) 건너뛰기로 결정, 1단계를 10-12부터 시작 (2026-10-12)
 - [x] Client(exe) + Renderer(정적 lib) 생성, `src/`로 이동, `/utf-8`, 하위 시스템 "창" + `wWinMain` → 창 만들기 ⓪ 진입점 확인(MessageBox) 완료, 커밋·푸시
-- [ ] 창 1~5단계: ① WndProc + `WNDCLASSEXW` + `RegisterClassExW` (디버거로 반환값 확인, `cbSize` 빼고 `GetLastError`) → ② `CreateWindowExW` + `ShowWindow` → ③ `GetMessage` 루프 → ④ `WM_DESTROY` → `PostQuitMessage` → ⑤ `PeekMessage` 게임 루프
-- [ ] 튜토리얼 01 D3D 부분을 Renderer에: 디바이스·스왑 체인·RTV·뷰포트·Clear·Present, 디버그 레이어 → 파란 화면
-- [ ] 설정 정리: Win32(x86) 구성 삭제, 출력 경로 `bin\`/`obj\`로
+- [x] 창 만들기 1~5단계, `PeekMessage` 게임 루프
+- [x] 1-1: 디바이스·스왑 체인·RTV·뷰포트·Clear·Present, 디버그 레이어 → 파란 화면
+- [x] 1-2: 셰이더(`shaders/triangle_VS.hlsl`, `_PS.hlsl`, 런타임 컴파일), 입력 레이아웃, 정점 버퍼 → 색 보간 삼각형 → 인덱스 버퍼 사각형 (인덱스 `UINT` + `R32_UINT`)
+- [x] 설정 정리: x64만, `bin\`/`obj\`, `/W4` 등 (2026-10-20)
+- [x] D3D 코드를 `Renderer` 클래스(정적 lib)로 분리, `InitDevice(HWND)`/`Render()`, 소멸자에서 정리, ComPtr 적용 (2026-10-21)
+- [ ] **다음: 1-3** 상수 버퍼(16바이트 정렬, `GetAddressOf()`로 바인딩) → WVP 행렬(`XMMatrixTranspose`) → 깊이 버퍼 → 회전하는 큐브. 샘플 Tutorial04~05
+- [ ] 미뤄 둔 실험: 어느 GPU로 그리는지 확인(`adapter->GetDesc()`, 이 PC는 AMD 내장 + RTX 5060 Ti), `ReportLiveDeviceObjects`로 누수 확인, 직접 만든 `MyComPtr`(선택)
 - [ ] README "빌드" 섹션, devlog 기록 (사용자 직접)
 
 진행 방식: 단계를 작게 나눠 단계마다 실행, 실행 전에 결과를 예측한다. 처음엔 문서·샘플을 보고 쳐도 되지만 한 줄씩 뜻을 말할 수 있을 때만 넘어가고, 다음 날 안 보고 다시 친다. 이해한 줄을 일부러 빼 보며 확인한다.

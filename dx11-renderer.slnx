@@ -5,13 +5,13 @@
     <File Path="shaders/triangle_PS.hlsl" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
     <File Path=".gitignore" />
     <File Path="CLAUDE.md" />
     <File Path="README.md" />
   </Folder>
   <Configurations>
     <Platform Name="x64" />
-    <Platform Name="x86" />
   </Configurations>
   <Folder Name="/docs/">
     <File Path="docs/devlog.md" />
