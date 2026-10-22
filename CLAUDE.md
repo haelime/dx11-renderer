@@ -41,6 +41,7 @@ C++/Direct3D 11 렌더러를 직접 만들며 공부하는 6개월 프로젝트 
 - 링크: `d3d11.lib`, `d3dcompiler.lib`는 `Renderer.cpp`의 `#pragma comment`로 Renderer가 직접 챙긴다 (Client 링커 설정에는 없음)
 - 그 밖: `/W4`, `/MP`, `WIN32_LEAN_AND_MEAN`, `NOMINMAX`, 포함 디렉터리 `$(SolutionDir)src\` (두 프로젝트 공통). 작업 디렉터리는 `.vcxproj`에 있음 (`.user` 아님)
 - 인코딩: 소스는 UTF-8 (`/utf-8`, 루트 `.editorconfig`). 셰이더는 BOM 없이 (fxc가 BOM을 거부할 수 있음)
+- 이름: 헝가리안 표기 (이 프로젝트만, 2026-10-21 결정. GitHub 리뷰 때 타입이 보이게). 범위 `g_`/`m_`/`s_` + 타입 `p`(ComPtr 포함)/`h`/`sz`/`b`/`n`·`i`/`f`·`d`/`u`·`dw`. 새 이름에 `lp`는 쓰지 않고 `p`로. Win32 매개변수 이름은 문서 그대로. 타입을 바꾸면 이름도 같이 바꾼다
 - D3D 객체는 `Microsoft::WRL::ComPtr`로 들고, `Release()`를 직접 부르지 않는다. 멤버는 선언 역순으로 해제되므로 디바이스를 맨 위에 선언
 - `.hlsl`을 프로젝트에 넣으면 VS가 FXC로 빌드하려 한다. 파일별로 셰이더 형식/모델(5.0)을 지정하거나, 런타임 컴파일이면 "빌드에서 제외".
 - 디버그 레이어 쓰려면 Windows 선택적 기능 "그래픽 도구" 필요.

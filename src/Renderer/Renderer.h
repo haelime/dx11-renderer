@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <d3d11_1.h>
 #include <wrl/client.h>
+#include "Renderer/Camera.h"
 
 class Renderer {
 	template<class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
@@ -15,7 +16,7 @@ public:
 
 	HRESULT InitDevice(HWND hWnd);
 
-	void Render();
+	void Render(const Camera& camera, double totalTime);
 
 private:
 	void CleanupDevice();
@@ -37,4 +38,10 @@ private:
 	ComPtr<ID3D11InputLayout> m_pVertexLayout;
 	ComPtr<ID3D11Buffer> m_pVertexBuffer;
 	ComPtr<ID3D11Buffer> m_pIndexBuffer;
+	ComPtr<ID3D11Buffer> m_pConstantBuffer;
+
+	Camera m_Camera;
+
+	//QueryPerformanceCounter time;
 };
+

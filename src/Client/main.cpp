@@ -1,8 +1,8 @@
 #include <windows.h>
 #include "resource.h"
 #include "Renderer/Renderer.h"
-
-
+#include "Renderer/Timer.h"
+#include "Renderer/Camera.h"
 
 HINSTANCE               g_hInst = nullptr;
 HWND                    g_hWnd = nullptr;
@@ -11,7 +11,6 @@ HWND                    g_hWnd = nullptr;
 // forward declarations
 // -------------------------
 HRESULT InitWindow(HINSTANCE hInstance, int nCmdshow);
-
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 
@@ -55,13 +54,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 	if (FAILED(InitWindow(hInstance, nCmdShow)))
 		return 0;
 
+	Timer timer;
+	Camera camera;
+	RECT rc;
+	GetClientRect(g_hWnd, &rc);
+	UINT width = rc.right - rc.left;
+	UINT height = rc.bottom - rc.top;
+	camera.SetAspect(static_cast<float>(width) / static_cast<float>(height));
+
 	Renderer renderer;
 	if (FAILED(renderer.InitDevice(g_hWnd)))
 		return 0;
 
 	MSG msg = { 0 };
-
-
 
 	while (WM_QUIT != msg.message)
 	{
@@ -72,7 +77,29 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 		}
 		else
 		{
-			renderer.Render();
+			// Should Fix like this
+
+			// timer.Tick();
+			// float dt = timer.DeltaTime();
+
+			// accumulator += dt;
+			// while (accumulator >= FIXED_DT)      ← 고정 간격 단계(물리)
+			// {
+			// 	FixedUpdate(FIXED_DT);
+			//	 accumulator -= FIXED_DT;
+			// }
+
+			// Update(dt);                          ← 프레임마다(입력, 카메라)
+			// renderer.Render(…);                  ← 그리기만
+			timer.Tick();
+
+			//DirectX::XMFLOAT3 pos = camera.GetPosition();
+			//pos.x = sinf(timer.TotalTime());
+			//pos.y = 0.0f;
+			//pos.z = -0.5f;
+			//camera.SetPosition(pos);
+
+			renderer.Render(camera, timer.TotalTime());
 		}
 	}
 

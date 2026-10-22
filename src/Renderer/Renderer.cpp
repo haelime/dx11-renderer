@@ -2,6 +2,7 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 #include "Renderer/Renderer.h"
+#include "Renderer/Camera.h"
 
 #include <d3dcompiler.h>
 #include <directxcolors.h>
@@ -17,6 +18,12 @@ namespace
 		XMFLOAT4 Col;
 	};
 
+	struct ConstantBuffer
+	{
+		XMMATRIX mWorld;
+		XMMATRIX mView;
+		XMMATRIX mProjection;
+	};
 	HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
 	{
 		HRESULT hr = S_OK;
@@ -52,6 +59,8 @@ namespace
 //--------------------------------------------------------------------------------------
 HRESULT Renderer::InitDevice(HWND hWnd)
 {
+	static_assert(sizeof(ConstantBuffer) % 16 == 0);
+
 	HRESULT hr = S_OK;
 
 	RECT rc;
@@ -265,25 +274,41 @@ HRESULT Renderer::InitDevice(HWND hWnd)
 	SimpleVertex vertices[] =
 	{
 		{
-			XMFLOAT3(-0.5f, 0.5f, 1.0f),
-			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
+			XMFLOAT3(-1.0f, -1.0f, -1.0f),
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),// R1
 		},
 		{
-			XMFLOAT3(0.5f, 0.5f, 1.0f),
-			XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),
+			XMFLOAT3(-1.0f, 1.0f, -1.0f),
+			XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),// G1
 		},
 		{
-			XMFLOAT3(0.5f, -0.5f, 1.0f),
-			XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f),
+			XMFLOAT3(1.0f, 1.0f, -1.0f),
+			XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f),// B1
 		},
 		{
-			XMFLOAT3(-0.5f, -0.5f, 1.0f),
-			XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
+			XMFLOAT3(1.0f, -1.0f, -1.0f),
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),// R2
+		},
+		{
+			XMFLOAT3(-1.0f, -1.0f, 1.0f),
+			XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),// G2
+		},
+		{
+			XMFLOAT3(-1.0f, 1.0f, 1.0f),
+			XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f),// B2
+		},
+		{
+			XMFLOAT3(1.0f, 1.0f, 1.0f),
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),// R3
+		},
+		{
+			XMFLOAT3(1.0f, -1.0f, 1.0f),
+			XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),// G3
 		},
 	};
 	D3D11_BUFFER_DESC vbd = {};
 	vbd.Usage = D3D11_USAGE_DEFAULT;
-	vbd.ByteWidth = sizeof(SimpleVertex) * 4;
+	vbd.ByteWidth = sizeof(SimpleVertex) * 8;
 	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
 
@@ -304,11 +329,11 @@ HRESULT Renderer::InitDevice(HWND hWnd)
 
 
 	// Create index buffer
-	UINT indices[6] = { 0,1,2,2,3,0, };
+	UINT indices[36] = { 0,1,2, 0,2,3, 3,2,6, 3,6,7, 7,6,5, 7,5,4, 4,5,1, 4,1,0, 1,5,6, 1,6,2, 4,0,3, 4,3,7};
 
 	D3D11_BUFFER_DESC ibd = {};
 	ibd.Usage = D3D11_USAGE_DEFAULT;
-	ibd.ByteWidth = sizeof(UINT) * 6;
+	ibd.ByteWidth = sizeof(UINT) * 36;
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibd.CPUAccessFlags = 0;
 
@@ -323,6 +348,17 @@ HRESULT Renderer::InitDevice(HWND hWnd)
 	m_pImmediateContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, ioffset);
 
 
+	D3D11_BUFFER_DESC cbd = {  };
+	cbd.Usage = D3D11_USAGE_DEFAULT;
+	cbd.ByteWidth = sizeof(ConstantBuffer);
+	cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbd.CPUAccessFlags = 0;
+
+	hr = m_pd3dDevice->CreateBuffer(&cbd, nullptr, m_pConstantBuffer.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
+
 	OutputDebugStringW(L"InitDevice OK\n");
 	return S_OK;
 }
@@ -331,14 +367,26 @@ HRESULT Renderer::InitDevice(HWND hWnd)
 //--------------------------------------------------------------------------------------
 // Render the frame
 //--------------------------------------------------------------------------------------
-void Renderer::Render()
+void Renderer::Render(const Camera& camera, double totalTime)
 {
 	// Just clear the backbuffer
 	m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), Colors::MidnightBlue);
 
+	ConstantBuffer cb;
+	cb.mWorld = XMMatrixMultiply(XMMatrixRotationX(totalTime * 0.5f), XMMatrixRotationY(totalTime));
+	cb.mWorld = XMMatrixTranspose(cb.mWorld);
+
+	cb.mView = XMMatrixTranspose(camera.View());
+	cb.mProjection = XMMatrixTranspose(camera.Projection());
+
+
+	m_pImmediateContext->UpdateSubresource(m_pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
 	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
+	m_pImmediateContext->VSSetConstantBuffers(0, 1, m_pConstantBuffer.GetAddressOf());
 	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
-	m_pImmediateContext->DrawIndexed(6, 0, 0);
+	m_pImmediateContext->DrawIndexed(36, 0, 0);
+
 
 	m_pSwapChain->Present(0, 0);
 }

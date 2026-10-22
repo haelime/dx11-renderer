@@ -1,5 +1,14 @@
 // triangle.hlsl
 // what the fuck should i do
+
+// constant buffer
+cbuffer ConstantBuffer : register(b0)
+{
+    matrix World;
+    matrix View;
+    matrix Projection;
+}
+
 struct VS_OUTPUT
 {
     float4 Pos : SV_POSITION;
@@ -9,10 +18,13 @@ struct VS_OUTPUT
 
 VS_OUTPUT VS(float4 Pos : POSITION, float4 Col : COLOR)
 {
-    VS_OUTPUT ret;
+    VS_OUTPUT output = (VS_OUTPUT) 0;
     
-    ret.Pos = Pos;
-    ret.Col = Col;
+    output.Pos = mul(Pos, World);
+    output.Pos = mul(output.Pos, View);
+    output.Pos = mul(output.Pos, Projection);
     
-    return ret;
+    output.Col = Col;
+
+    return output;
 }
