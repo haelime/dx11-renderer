@@ -185,11 +185,37 @@ HRESULT Renderer::InitDevice(HWND hWnd)
 	if (FAILED(hr))
 		return hr;
 
+	// Create depth buffer
+	D3D11_TEXTURE2D_DESC depthStencilBufferDesc = {};
+	depthStencilBufferDesc.Width = width;
+	depthStencilBufferDesc.Height = height;
+	depthStencilBufferDesc.MipLevels = 1;
+	depthStencilBufferDesc.ArraySize = 1;
+	depthStencilBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilBufferDesc.SampleDesc.Count = 1;
+	depthStencilBufferDesc.SampleDesc.Quality = 0;
+	depthStencilBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilBufferDesc.CPUAccessFlags = 0;
+	depthStencilBufferDesc.MiscFlags = 0;
+	hr = m_pd3dDevice->CreateTexture2D(&depthStencilBufferDesc, nullptr, &m_pDepthStencilBuffer);
+	if (FAILED(hr))
+		return hr;
+
+	// Create the depth stencil view
+	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
+	depthStencilViewDesc.Format = depthStencilBufferDesc.Format;
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	depthStencilViewDesc.Texture2D.MipSlice = 0;
+	hr = m_pd3dDevice->CreateDepthStencilView(m_pDepthStencilBuffer.Get(), &depthStencilViewDesc, &m_pDepthStencilView);
+	if (FAILED(hr))
+		return hr;
+
 	hr = m_pd3dDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &m_pRenderTargetView);
 	if (FAILED(hr))
 		return hr;
 
-	m_pImmediateContext->OMSetRenderTargets(1, m_pRenderTargetView.GetAddressOf(), nullptr);
+	m_pImmediateContext->OMSetRenderTargets(1, m_pRenderTargetView.GetAddressOf(), m_pDepthStencilView.Get());
 
 	// Setup the viewport
 	D3D11_VIEWPORT vp;
@@ -359,6 +385,8 @@ HRESULT Renderer::InitDevice(HWND hWnd)
 		return hr;
 
 
+
+
 	OutputDebugStringW(L"InitDevice OK\n");
 	return S_OK;
 }
@@ -371,14 +399,13 @@ void Renderer::Render(const Camera& camera, double totalTime)
 {
 	// Just clear the backbuffer
 	m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), Colors::MidnightBlue);
+	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0 );
 
 	ConstantBuffer cb;
 	cb.mWorld = XMMatrixMultiply(XMMatrixRotationX(totalTime * 0.5f), XMMatrixRotationY(totalTime));
 	cb.mWorld = XMMatrixTranspose(cb.mWorld);
-
 	cb.mView = XMMatrixTranspose(camera.View());
 	cb.mProjection = XMMatrixTranspose(camera.Projection());
-
 
 	m_pImmediateContext->UpdateSubresource(m_pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
@@ -387,6 +414,10 @@ void Renderer::Render(const Camera& camera, double totalTime)
 	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
 	m_pImmediateContext->DrawIndexed(36, 0, 0);
 
+	cb.mWorld = XMMatrixTranslation(1.0f, 0.0f, 5.0f);
+	cb.mWorld = XMMatrixTranspose(cb.mWorld);
+	m_pImmediateContext->UpdateSubresource(m_pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+	m_pImmediateContext->DrawIndexed(36, 0, 0);
 
 	m_pSwapChain->Present(0, 0);
 }

@@ -40,7 +40,8 @@ private:
 	ComPtr<ID3D11Buffer> m_pIndexBuffer;
 	ComPtr<ID3D11Buffer> m_pConstantBuffer;
 
-	Camera m_Camera;
+	ComPtr<ID3D11Texture2D> m_pDepthStencilBuffer;
+	ComPtr<ID3D11DepthStencilView> m_pDepthStencilView;
 
 	//QueryPerformanceCounter time;
 };

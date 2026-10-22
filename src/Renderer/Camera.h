@@ -26,7 +26,7 @@ public:
 	float GetFar() const;
 
 private:
-	DirectX::XMFLOAT3 m_vPosition = { 0.0f, 0.0f, -5.0f };
+	DirectX::XMFLOAT3 m_vPosition = { 0.0f, 0.0f, -10.0f };
 	DirectX::XMFLOAT3 m_vTarget = { 0.0f, 0.0f, 0.0f };
 	DirectX::XMFLOAT3 m_vUp = { 0.0f, 1.0f, 0.0f };
 

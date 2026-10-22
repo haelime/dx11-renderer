@@ -58,7 +58,8 @@ C++/Direct3D 11 렌더러를 직접 만들며 공부하는 6개월 프로젝트 
 - [x] 1-2: 셰이더(`shaders/triangle_VS.hlsl`, `_PS.hlsl`, 런타임 컴파일), 입력 레이아웃, 정점 버퍼 → 색 보간 삼각형 → 인덱스 버퍼 사각형 (인덱스 `UINT` + `R32_UINT`)
 - [x] 설정 정리: x64만, `bin\`/`obj\`, `/W4` 등 (2026-10-20)
 - [x] D3D 코드를 `Renderer` 클래스(정적 lib)로 분리, `InitDevice(HWND)`/`Render()`, 소멸자에서 정리, ComPtr 적용 (2026-10-21)
-- [ ] **다음: 1-3** 상수 버퍼(16바이트 정렬, `GetAddressOf()`로 바인딩) → WVP 행렬(`XMMatrixTranspose`) → 깊이 버퍼 → 회전하는 큐브. 샘플 Tutorial04~05
+- [x] 1-3 앞부분: `Timer`(QPC), `Camera`(View/Projection), 상수 버퍼 + WVP(전치), 회전하는 큐브(8정점·36인덱스, 바깥에서 시계 방향), 깊이 버퍼(D24S8 + DSV) + 큐브 두 개 (2026-10-22)
+- [ ] **다음: 1-3 나머지** Update/Render 분리(시간은 Render 밖, 물체마다 World) → FPS 카메라(키보드·마우스 입력, yaw/pitch, 외적으로 right, 델타 타임)
 - [ ] 미뤄 둔 실험: 어느 GPU로 그리는지 확인(`adapter->GetDesc()`, 이 PC는 AMD 내장 + RTX 5060 Ti), `ReportLiveDeviceObjects`로 누수 확인, 직접 만든 `MyComPtr`(선택)
 - [ ] README "빌드" 섹션, devlog 기록 (사용자 직접)
 
